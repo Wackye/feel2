@@ -27,19 +27,18 @@ val = 0
 try:
     while True:
         #Ask user for angle and turn servo to it
-#         GPIO.output(led, GPIO.HIGH)
+        GPIO.output(led, GPIO.HIGH)
 #         time.sleep(0.2)
-#         GPIO.output(led,GPIO.LOW)
 #         time.sleep(0.2)
         tmp = GPIO.input(switch)
 #         if(val != tmp):
         print('status:  ', tmp)
-#             val = tmp
+        val = tmp
         time.sleep(0.2)        
         
 finally:
     #Clean things up at the end with ctrl + C
 #    led.stop()
 #    switch.stop()
-    GPIO.cleanup()
+#     GPIO.cleanup()
     print("Goodbye!")
