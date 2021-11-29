@@ -32,7 +32,7 @@ GPIO.output(26,GPIO.LOW)
 
 ### turn on led light
 #GPIO.output(4,GPIO.HIGH)
-led1.ChangeDutyCycle(100)
+led1.ChangeDutyCycle(15)
 
 servo1.ChangeDutyCycle(2+(0/18))
 GPIO.output(26,GPIO.HIGH)
