@@ -6,45 +6,52 @@ import random
 import threading
 import os
 import time
-import RPi.GPIO as GPIO          
+import RPi.GPIO as GPIO      
+import queue    
 from time import sleep
+import sys
 
-def read_sounds(bg, bg_file, sounds):
-### read sounds
-    print('read background music...')
-    with open(bg_file,'rb') as f:
-        bg['bgm'] = AudioSegment.from_file(f)
+# def read_sounds(bg, bg_file, sounds):
+# ### read sounds
+#     print('read background music...')
+#     with open(bg_file,'rb') as f:
+#         bg['bgm'] = AudioSegment.from_file(f)
  
-    print('read sounds...')
-    for file in os.listdir(path):
-        if file.endswith(".wav"):
-            # print('add ' + os.path.join(path,file))
-            with open(os.path.join(path,file),'rb') as f:
-                filename = file.replace('.wav', '')
-                # d = {filename : AudioSegment.from_file(f)}
-                sounds[str.upper(filename)] = AudioSegment.from_file(f)
-                # audios.append(AudioSegment.from_file(os.path.join(path,file)))
+#     print('read sounds...')
+#     for file in os.listdir(path):
+#         if file.endswith(".wav"):
+#             # print('add ' + os.path.join(path,file))
+#             with open(os.path.join(path,file),'rb') as f:
+#                 filename = file.replace('.wav', '')
+#                 # d = {filename : AudioSegment.from_file(f)}
+#                 sounds[str.upper(filename)] = AudioSegment.from_file(f)
+#                 # audios.append(AudioSegment.from_file(os.path.join(path,file)))
+def read_sound(path, file):
+        # print(file)
+        # if(os.path.exists(os.path.join(path,file))):
+        with open(os.path.join(path,file),'rb') as f:
+            return AudioSegment.from_file(f)
 
-def read_csv(csv_file,test_case):
-    ### Read csv & play
-    print('read csv file...')
-    # 開啟 CSV 檔案
-    with open(csv_file, newline='', encoding='utf-8') as csvfile:
-
-        # 讀取 CSV 檔案內容
-        csvreader = csv.reader(csvfile)
-        header = next(csvreader)
-        # 以迴圈輸出每一列
-        for row in csvreader:
-            if row[2] != '':
-                encoding[row[0]] = row[2]
-                # print("Add " + row[0] + ":" + row[2])
-                for times in range(0,int(row[1])):
-                    test_case.append(str.upper(row[2]))
-
-    random.shuffle(test_case)
+def read_database(database, csv_file, path):
     
-    
+    start = time.time()
+    with open(csv_file, newline='') as csvfile:
+
+        # 讀取csv檔案內容
+        rows = csv.reader(csvfile)
+        # print(rows)
+        # break out single row to database
+        # and add correct piece of code according to repeat time. 
+        for row in rows:
+            # print(row)
+            sound = read_sound(path,row[2] + '.wav')
+            for i in range(0, int(row[1])):
+                qrcode = str(row[3])[0:-1] + str(i+1)
+                dict = { qrcode : sound } # qrcode: sound_file pair
+                database.update(dict)
+        print('finish read database')
+    print(time.time() - start)
+
 def init_motor():
     print('intialize motor')
     GPIO.setup(5,GPIO.OUT)
@@ -57,7 +64,6 @@ def init_motor():
     GPIO.output(19,GPIO.LOW)
     GPIO.setup(26,GPIO.OUT)
     GPIO.output(26,GPIO.LOW)
-
     
 def init_servo(s1):
     print('initialize servo')
@@ -103,24 +109,24 @@ def loading_servo(s1,angle):
     servo.start(0)
     servo.ChangeDutyCycle(2+(0/18))
     time.sleep(1)
-    servo.stop()
+    # servo.stop()
     
-
-def loading_led(led):
+def loading_led(led,self):
+    
     print("loading_led")
     GPIO.setup(led,GPIO.OUT)
-    GPIO.output(led,GPIO.HIGH)
     led1 = GPIO.PWM(led,200)
-    led1.ChangeDutyCycle(100)
+    led1.start(0)
+    led1.ChangeDutyCycle(15)
+    time.sleep(106)
 
-    
 def changeAngle(s1, angle):
     GPIO.setup(s1,GPIO.OUT)
     servo = GPIO.PWM(s1,50) # pin 11 for servo1, pulse 50Hz
     servo.start(0)
     servo.ChangeDutyCycle(2+(angle/18))
     time.sleep(1)
-    servo.stop()
+    # servo.stop()
 
 def run_servo(s1,n):
 
@@ -169,124 +175,144 @@ def run_motor_new():
     GPIO.output(6,GPIO.LOW)
 
     GPIO.output(5,GPIO.HIGH)
-    time.sleep(9)
+    time.sleep(10)
     GPIO.output(5,GPIO.LOW)
 
-def playbg(dict,filename):
-    play(dict[filename])
+def playbg(background,self):
+    play(background)
+    exit()
 
-def shot(dict,filename):
-    play(dict[filename])
-    exit(0)
+def shot(path, q):
+    while(True):
+        if(q.empty() != True):
+            play(q.get())
+            time.sleep(0.02)
+
 
 def stop_led(led):
     GPIO.setup(led,GPIO.OUT)
-    GPIO.output(led,GPIO.LOW)
-    
+    led1 = GPIO.PWM(led,200)
+    led1.ChangeDutyCycle(0)
+    # GPIO.output(led,GPIO.LOW)
+    led1.stop()
+
 def stop_servo(s1):
     servo1 = GPIO.PWM(s1,50) # pin 11 for servo1, pulse 50Hz
     servo1.ChangeDutyCycle(0)
     time.sleep(1)
     servo1.stop()
 
-### read csv
+
+
+database = dict()
+q = queue.Queue()
+
 if __name__ == '__main__':  #必須放這段代碼，不然會Error
 
-    GPIO.cleanup()
-
+    GPIO.setwarnings(False)
     ### file IO
-    sounds = {}
-    bg = {}
-    bg_file = './sounds/44_53bar.wav'    
-#    path = './sounds/sounds/'
+
+    bg_file = './sounds/bale_53bar.wav'
+    # bg_file = './sounds/44_53bar.wav'    
     path = './sounds_complete/'
 
     ### database
-    encoding = {}
-    test_case = []
-    csv_file = 'encoding.csv'
+    csv_file = './1.csv'
+
+    ### motor
+    m1 = 24
+    m2 = 23
+    en = 25
+        
+    ### servo
+    s1 = 17
+    countCircle = 0
+    
+    ### read count
+    count = 0
+
+    ### led
+    led = 4
 
     ### threading
     t_list = []
 
-    ### motor
-    motor_list = []
-    m1 = 24
-    m2 = 23
-    en = 25
-    
-    ### motor_control
-    
-    
-    
-    ### servo
-    s1 = 17
-    countCirlce = 0
-    
-    ### read count
-    count = 0
-    random.seed(time.time())
 
-    ### led
-    led = 4
-    
     GPIO.setmode(GPIO.BCM)
-
+    print('initialize...')
     init_motor()
     init_servo(s1)
     init_led(led)
     
-    loading = threading.Thread(target=loading_servo, args=(s1,0))
-    loading.start()
+    # loading = threading.Thread(target=loading_servo, args=(s1,0))
+    # loading.start()
     
-    read_sounds(bg, bg_file,sounds)
-    read_csv(csv_file, test_case)
-        
-    loading_led(led)
-    
+    with open(bg_file,'rb') as f:
+        # filename = bg_file.replace('.wav', '')
+        bg = AudioSegment.from_file(f)
+
+    print('loading database...')
+    read_database(database, csv_file, path)
     print('threading...')
-    t = threading.Thread(target=run_servo, args=(s1,''))
-    motor_list.append(t)
-      
-    t = threading.Thread(target=run_motor_new)
-    motor_list.append(t)
-    
+    servo_thread = threading.Thread(target=run_servo, args=(s1,''))      
+    motor_thread = threading.Thread(target=run_motor_new)
+    led_thread = threading.Thread(target=loading_led,args=(led,''))
+
     # play background music
-    t = threading.Thread(target=playbg, args=(bg,'bgm'))
-    t_list.append(t)
+    bg_thread = threading.Thread(target=playbg, args=(bg,'bgm'))
 
-    ### play random sounds
-    for i in range(1,len(test_case)):
-        # print(sounds[test_case[i]])
-        t = threading.Thread(target=shot, args=(sounds,test_case[i]))
+  
+    # loading.join()
+    
+
+    
+    for i in range(0,4):
+        t = threading.Thread(target=shot, args=(path, q))
         t_list.append(t)
-        
-    loading.join()
-    
-    interval = 1.0   
-    start = time.time()
-    end = 0
-
-    for m in motor_list:
-        m.start()
-    
-    t_list[0].start()
-    time.sleep(2)
-        
-    for i in range(1,len(t_list)):
-#         count+=1
-#         print(count)
+        # time.sleep(0.25)
         t_list[i].start()
-        time.sleep(interval - end)
-        print(interval - end)
-        end = ((time.time() - start) * 1000 % (interval * 1000)) / 1000
 
-    for m in motor_list:
-        m.join()
-        
-    for t in t_list:
-        t.join()    
+    led_thread.start()
+
+
+    servo_thread.start()
+    motor_thread.start()
     
+    # os.system('python3 ./player_test.py')
+    bg_thread.start() 
+    time.sleep(4)
+
+
+    
+    last = 0
+    interval = 1.0   
+    end = 0
+    start = time.time()     
+    
+    while(True):
+
+        tmp = input()
+        if( tmp != last):
+            # print('\n file:   ' + database[tmp])
+
+            q.put(database[tmp])
+                   
+            last = tmp
+            # time.sleep(interval)
+            # print(interval - end)
+            time.sleep(interval - end)
+            end = ((time.time() - start) * 1000 % (interval * 1000)) / 1000
+            
+            
+            # start = end
+            # t = threading.Thread(target=playbg, args=(database[tmp],''))
+            # t.start()
+
+
+    servo_thread.join()
+    motor_thread.join()
+    bg_thread.join()
+
     #Clean things
     stop_servo(s1)
     stop_led(led)

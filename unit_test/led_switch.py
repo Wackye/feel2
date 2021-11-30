@@ -24,6 +24,7 @@ GPIO.setup(switch,GPIO.IN)
 
 val = 0
 
+
 try:
     while True:
         #Ask user for angle and turn servo to it
