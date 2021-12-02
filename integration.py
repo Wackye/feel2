@@ -108,8 +108,8 @@ def loading_servo(s1,angle):
 
     servo.start(0)
     servo.ChangeDutyCycle(2+(0/18))
-    time.sleep(1)
-    # servo.stop()
+    time.sleep(3)
+    servo.stop()
     
 def loading_led(led,self):
     
@@ -117,16 +117,16 @@ def loading_led(led,self):
     GPIO.setup(led,GPIO.OUT)
     led1 = GPIO.PWM(led,200)
     led1.start(0)
-    led1.ChangeDutyCycle(15)
+    led1.ChangeDutyCycle(100)
     time.sleep(106)
 
 def changeAngle(s1, angle):
-    GPIO.setup(s1,GPIO.OUT)
+    # GPIO.setup(s1,GPIO.OUT)
     servo = GPIO.PWM(s1,50) # pin 11 for servo1, pulse 50Hz
     servo.start(0)
     servo.ChangeDutyCycle(2+(angle/18))
     time.sleep(1)
-    # servo.stop()
+    servo.stop()
 
 def run_servo(s1,n):
 
@@ -202,7 +202,21 @@ def stop_servo(s1):
     time.sleep(1)
     servo1.stop()
 
-
+def led_control(led, switch):
+    print("initialize led switch thread")
+    GPIO.setup(led,GPIO.OUT)
+    GPIO.setup(switch,GPIO.IN)
+    led1 = GPIO.PWM(led,50)
+    led1.start(0)
+    while True:
+        tmp = GPIO.input(switch)
+        
+        # print(tmp)
+        # if(val > 0.5):
+        if(tmp == 1):
+            led1.ChangeDutyCycle(100)
+        elif(tmp == 0):
+            led1.ChangeDutyCycle(0)
 
 database = dict()
 q = queue.Queue()
@@ -233,6 +247,7 @@ if __name__ == '__main__':  #必須放這段代碼，不然會Error
 
     ### led
     led = 4
+    switch = 18
 
     ### threading
     t_list = []
@@ -240,13 +255,18 @@ if __name__ == '__main__':  #必須放這段代碼，不然會Error
 
     GPIO.setmode(GPIO.BCM)
     print('initialize...')
+
     init_motor()
     init_servo(s1)
     init_led(led)
     
-    # loading = threading.Thread(target=loading_servo, args=(s1,0))
-    # loading.start()
+    # led_thread = threading.Thread(target=led_control, args=(led, switch))
+    # led_thread.start()
     
+    loading = threading.Thread(target=loading_servo, args=(s1,0))
+    loading.start()
+    
+    print('loading background music...')
     with open(bg_file,'rb') as f:
         # filename = bg_file.replace('.wav', '')
         bg = AudioSegment.from_file(f)
@@ -285,7 +305,7 @@ if __name__ == '__main__':  #必須放這段代碼，不然會Error
 
     
     last = 0
-    interval = 1.0   
+    interval = 5.0   
     end = 0
     start = time.time()     
     
@@ -300,10 +320,9 @@ if __name__ == '__main__':  #必須放這段代碼，不然會Error
             last = tmp
             # time.sleep(interval)
             # print(interval - end)
-            time.sleep(interval - end)
             end = ((time.time() - start) * 1000 % (interval * 1000)) / 1000
-            
-            
+            time.sleep(interval - end)
+
             # start = end
             # t = threading.Thread(target=playbg, args=(database[tmp],''))
             # t.start()

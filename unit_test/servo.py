@@ -25,7 +25,7 @@ try:
         #Ask user for angle and turn servo to it
         angle = float(input('Enter angle between 0 & 180: '))
         servo1.ChangeDutyCycle(2+(angle/18))
-#         time.sleep(0.5)
+        time.sleep(0.5)
 #         servo1.ChangeDutyCycle(0)
 
 finally:
@@ -36,17 +36,7 @@ finally:
 
 ##################################################################
 
-###
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    GPIO17 (Pin11) for servo PWM
+### GPIO17 (Pin11) for servo PWM
 
 ### GPIO23 (Pin16) for motor controlA
 ### GPIO24 (Pin18) for motor controlB
