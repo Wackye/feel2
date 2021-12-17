@@ -11,10 +11,10 @@ GPIO.output(2,GPIO.HIGH)
 ### ^setup UD as increase res
 GPIO.setup(3,GPIO.OUT)
 GPIO.output(3,GPIO.LOW)
-### ^setup INC
+### ^setup INC 
 GPIO.setup(4,GPIO.OUT)
 GPIO.output(4,GPIO.LOW)
-### ^setup CS
+### ^setup CS 
 
 GPIO.setup(22,GPIO.OUT)
 ### ^setup Relay
@@ -31,6 +31,8 @@ servo1 = GPIO.PWM(18,50) # pin 11 for servo1, pulse 50Hz
 servo1.start(0)
 ### ^Setup Servo
 
+### reset 電位器，用3個pin去控制
+### 每run一次會上去一個位階，所以要跑100次
 for i in range (1, 100):		
 	GPIO.output(3,GPIO.LOW)
 	time.sleep(0.0002)
@@ -59,7 +61,7 @@ try:
             ### ^turn on led
 
             ############################# Motor Speed 1 ###########################################################
-
+            ### 從100階往下慢慢降
             for i in range (1, 5):		
                 GPIO.output(3,GPIO.LOW)
                 time.sleep(0.002)
@@ -67,7 +69,6 @@ try:
                 time.sleep(0.002)
             ### ^decrease DigiPot by 5 steps, desire 3.23v
             print("Speed 1 (step99, =3.08v)")
-
             servo1.ChangeDutyCycle(2+(0/18))
 
             time.sleep(3)
