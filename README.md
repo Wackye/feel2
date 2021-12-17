@@ -2,10 +2,11 @@
 
 ## 專案說明
 ---
-主程式放在integration.py，個別模組的單元測試放在unit_test資料夾內
-sounds開頭的資料夾存放音檔，待整理
-csv檔儲存色票, 播放次數, 對應音效, Code的對應資訊
-uniility存放檔案命名小工具
+- 主程式: integration.py
+- unit_test資料夾: 個別模組的單元測試
+- sounds開頭的資料夾: 存放音檔，待整理
+- csv檔: 儲存色票, 播放次數, 對應音效, Code的對應資訊
+- uniility資料夾: 存放檔案命名小工具
 
 ## 開發環境要求
 ---
