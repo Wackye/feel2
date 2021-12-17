@@ -1,3 +1,5 @@
+### 測試用執行緒池(threading pool)的寫法來播放音效
+
 import threading
 import queue
 import time
