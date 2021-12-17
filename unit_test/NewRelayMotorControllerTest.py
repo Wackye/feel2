@@ -1,3 +1,5 @@
+### +N原本的測試檔案
+
 import time
 import RPi.GPIO as GPIO
 
