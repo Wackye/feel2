@@ -302,7 +302,7 @@ if __name__ == '__main__':  #必須把程式包在main function內，不然會Er
     time.sleep(4)
 
     
-    ### 播放音檔間隔
+    ### 讀取/播放音檔間隔
     interval = 1.0
 
     ### 計時器用
