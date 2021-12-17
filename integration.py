@@ -11,27 +11,14 @@ import queue
 from time import sleep
 import sys
 
-# def read_sounds(bg, bg_file, sounds):
-# ### read sounds
-#     print('read background music...')
-#     with open(bg_file,'rb') as f:
-#         bg['bgm'] = AudioSegment.from_file(f)
- 
-#     print('read sounds...')
-#     for file in os.listdir(path):
-#         if file.endswith(".wav"):
-#             # print('add ' + os.path.join(path,file))
-#             with open(os.path.join(path,file),'rb') as f:
-#                 filename = file.replace('.wav', '')
-#                 # d = {filename : AudioSegment.from_file(f)}
-#                 sounds[str.upper(filename)] = AudioSegment.from_file(f)
-#                 # audios.append(AudioSegment.from_file(os.path.join(path,file)))
+
+### 讀取音檔後回傳
 def read_sound(path, file):
-        # print(file)
         # if(os.path.exists(os.path.join(path,file))):
         with open(os.path.join(path,file),'rb') as f:
             return AudioSegment.from_file(f)
 
+### 讀取csv並存入database
 def read_database(database, csv_file, path):
     
     start = time.time()
@@ -39,7 +26,6 @@ def read_database(database, csv_file, path):
 
         # 讀取csv檔案內容
         rows = csv.reader(csvfile)
-        # print(rows)
         # break out single row to database
         # and add correct piece of code according to repeat time. 
         for row in rows:
@@ -52,6 +38,7 @@ def read_database(database, csv_file, path):
         print('finish read database')
     print(time.time() - start)
 
+### 初始化步進馬達
 def init_motor():
     print('intialize motor')
     GPIO.setup(5,GPIO.OUT)
@@ -65,9 +52,9 @@ def init_motor():
     GPIO.setup(26,GPIO.OUT)
     GPIO.output(26,GPIO.LOW)
     
+### 初始化Servo馬達
 def init_servo(s1):
     print('initialize servo')
-    # Set pin 11 as an output, and define as servo1 as PWM pin
     GPIO.setup(s1,GPIO.OUT)
     servo1 = GPIO.PWM(s1,50) # pin 11 for servo1, pulse 50Hz
         
@@ -79,6 +66,7 @@ def init_servo(s1):
     servo1.ChangeDutyCycle(0)
     servo1.stop()
 
+### 初始化led
 def init_led(led):
     print('initialize led')
     GPIO.setup(led,GPIO.OUT)
@@ -96,6 +84,7 @@ def init_led(led):
 #     l = GPIO.PWM(led,50)
 #     l.start(10)
 
+### 在loading 狀態時讓馬達動一動
 def loading_servo(s1,angle):
     servo = GPIO.PWM(s1,50) # pin 11 for servo1, pulse 50Hz    
     # Start PWM running, with value of 0 (pulse off)
@@ -110,16 +99,18 @@ def loading_servo(s1,angle):
     servo.ChangeDutyCycle(2+(0/18))
     time.sleep(3)
     servo.stop()
+
+### 在開始旋轉後常亮106秒
+def run_led(led,self):
     
-def loading_led(led,self):
-    
-    print("loading_led")
+    print("run_led")
     GPIO.setup(led,GPIO.OUT)
     led1 = GPIO.PWM(led,200)
     led1.start(0)
     led1.ChangeDutyCycle(100)
     time.sleep(106)
 
+### 改變角度後休息一秒return, call by run_servo
 def changeAngle(s1, angle):
     # GPIO.setup(s1,GPIO.OUT)
     servo = GPIO.PWM(s1,50) # pin 11 for servo1, pulse 50Hz
@@ -127,6 +118,7 @@ def changeAngle(s1, angle):
     servo.ChangeDutyCycle(2+(angle/18))
     time.sleep(1)
     servo.stop()
+
 
 def run_servo(s1,n):
 
@@ -150,7 +142,7 @@ def run_servo(s1,n):
     print('servo rotate 165')
     time.sleep(8)
 
-def run_motor_new():
+def run_motor():
     
     GPIO.setup(5,GPIO.OUT)
     GPIO.setup(6,GPIO.OUT)
@@ -178,16 +170,17 @@ def run_motor_new():
     time.sleep(10)
     GPIO.output(5,GPIO.LOW)
 
+
 def playbg(background,self):
     play(background)
     exit()
 
+### 播放單個音檔
 def shot(path, q):
     while(True):
         if(q.empty() != True):
             play(q.get())
             time.sleep(0.02)
-
 
 def stop_led(led):
     GPIO.setup(led,GPIO.OUT)
@@ -208,6 +201,7 @@ def led_control(led, switch):
     GPIO.setup(switch,GPIO.IN)
     led1 = GPIO.PWM(led,50)
     led1.start(0)
+
     while True:
         tmp = GPIO.input(switch)
         
@@ -221,14 +215,14 @@ def led_control(led, switch):
 database = dict()
 q = queue.Queue()
 
-if __name__ == '__main__':  #必須放這段代碼，不然會Error
+if __name__ == '__main__':  #必須把程式包在main function內，不然會Error
 
     GPIO.setwarnings(False)
     ### file IO
 
-    bg_file = './sounds/bale_53bar.wav'
+    bg_file = './sounds/bale_53bar.wav'  ### 背景音樂
     # bg_file = './sounds/44_53bar.wav'    
-    path = './sounds_complete/'
+    path = './sounds_complete/' ### 音檔資料夾
 
     ### database
     csv_file = './1.csv'
@@ -252,6 +246,7 @@ if __name__ == '__main__':  #必須放這段代碼，不然會Error
     ### threading
     t_list = []
 
+    ###----------上面是宣告，下面才正式開始執行----------
 
     GPIO.setmode(GPIO.BCM)
     print('initialize...')
@@ -263,9 +258,11 @@ if __name__ == '__main__':  #必須放這段代碼，不然會Error
     # led_thread = threading.Thread(target=led_control, args=(led, switch))
     # led_thread.start()
     
+    ### 用多執行緒方式載入loading
     loading = threading.Thread(target=loading_servo, args=(s1,0))
     loading.start()
     
+    ### 讀取csv建立QR Code和音檔pair, 背景音樂和音檔
     print('loading background music...')
     with open(bg_file,'rb') as f:
         # filename = bg_file.replace('.wav', '')
@@ -273,42 +270,47 @@ if __name__ == '__main__':  #必須放這段代碼，不然會Error
 
     print('loading database...')
     read_database(database, csv_file, path)
+
+    ### 將伺服馬達, 直流馬達, 燈光, 背景音樂, 皆加入多執行緒
     print('threading...')
     servo_thread = threading.Thread(target=run_servo, args=(s1,''))      
-    motor_thread = threading.Thread(target=run_motor_new)
-    led_thread = threading.Thread(target=loading_led,args=(led,''))
+    motor_thread = threading.Thread(target=run_motor)
+    led_thread = threading.Thread(target=run_led,args=(led,''))
 
     # play background music
     bg_thread = threading.Thread(target=playbg, args=(bg,'bgm'))
 
-  
+    
     # loading.join()
     
-
-    
+    ### 開啟4個用來播放音檔的執行緒池, 一有音檔讀入queue, 就會被其中一個執行緒抓去播放
     for i in range(0,4):
         t = threading.Thread(target=shot, args=(path, q))
         t_list.append(t)
         # time.sleep(0.25)
         t_list[i].start()
 
+    ### 執行緒開始
     led_thread.start()
-
-
     servo_thread.start()
     motor_thread.start()
     
     # os.system('python3 ./player_test.py')
     bg_thread.start() 
+
+    ### 先轉四秒再開始播放音檔
     time.sleep(4)
 
-
     
+    ### 播放音檔間隔
+    interval = 1.0
+
+    ### 計時器用
     last = 0
-    interval = 5.0   
     end = 0
     start = time.time()     
     
+    ### 持續讀入QR Code, 存入對應音檔
     while(True):
 
         tmp = input()
@@ -327,7 +329,7 @@ if __name__ == '__main__':  #必須放這段代碼，不然會Error
             # t = threading.Thread(target=playbg, args=(database[tmp],''))
             # t.start()
 
-
+    ### 關閉其他執行緒
     servo_thread.join()
     motor_thread.join()
     bg_thread.join()
