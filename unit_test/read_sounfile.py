@@ -16,12 +16,12 @@ if __name__ == '__main__':  #必須放這段代碼，不然會Error
     sounds = {}
     bg = {}
     bg_file = './sounds/44_53bar.wav'    
-    path = './sounds_test/'
+    path = './sounds_complete/'
 
     ### Database
     encoding = {}
     test_case = []
-    csv_file = 'encoding.csv'
+    csv_file = '1.csv'
 
     ### threading
     t_list = []
@@ -53,7 +53,7 @@ if __name__ == '__main__':  #必須放這段代碼，不然會Error
     ### Read csv & play
 
     print('sounds: ' + str(time.time() - start))
-    exit()
+    # exit()
 
     # 開啟 CSV 檔案
     with open(csv_file, newline='', encoding='utf-8') as csvfile:
