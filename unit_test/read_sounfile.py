@@ -16,7 +16,7 @@ if __name__ == '__main__':  #必須放這段代碼，不然會Error
     sounds = {}
     bg = {}
     bg_file = './sounds/44_53bar.wav'    
-    path = './sounds_complete/'
+    path = './sounds_test/'
 
     ### Database
     encoding = {}
@@ -28,13 +28,17 @@ if __name__ == '__main__':  #必須放這段代碼，不然會Error
     
     random.seed(time.time())
 
-
-
+    
+    start = time.time()
+    
     ### read sounds
     with open(bg_file,'rb') as f:
         d = {'bgm' : AudioSegment.from_file(f)}
         bg = d
 
+    print('background : ' + str(time.time() - start))
+    start = time.time()
+    
     for file in os.listdir(path):
         if file.endswith(".wav"):
             # print('add ' + os.path.join(path,file))
@@ -47,6 +51,9 @@ if __name__ == '__main__':  #必須放這段代碼，不然會Error
 
 
     ### Read csv & play
+
+    print('sounds: ' + str(time.time() - start))
+    exit()
 
     # 開啟 CSV 檔案
     with open(csv_file, newline='', encoding='utf-8') as csvfile:
@@ -63,6 +70,11 @@ if __name__ == '__main__':  #必須放這段代碼，不然會Error
                     test_case.append(str.upper(row[2]))
 
     random.shuffle(test_case)
+
+    
+    
+    
+##    ----
 
     print('threading...')
         
