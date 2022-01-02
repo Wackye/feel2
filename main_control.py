@@ -81,9 +81,10 @@ def Read_Database(database, csv_file, path):
 
         # 讀取csv檔案內容
         rows = csv.reader(csvfile)
+        next(rows, None)
         for row in rows:
             # print(row)
-            sound = read_sound(path,row[2] + '.wav')
+            sound = read_sound(path,row[2].upper() + '.wav')
             for i in range(0, int(row[1])):
                 qrcode = str(row[3])[0:-1] + str(i+1)
                 dict = { qrcode : sound } # qrcode: sound_file pair
@@ -267,14 +268,14 @@ if __name__ == '__main__':
 
     ### Sounds
     bg_path = './sounds/'  ### 背景音樂
-    sound_path = './sounds_complete/' ### 音檔資料夾
+    sound_path = './sounds/sfx/' ### 音檔資料夾
 
     bg_list = []
     database = dict()
 
 
     ### database
-    csv_file = './1.csv'
+    csv_file = './csv/all.csv'
 
     ### threading
     t_list = []
@@ -309,7 +310,8 @@ if __name__ == '__main__':
     Read_Database(database, csv_file, sound_path)
     
     print('Loading Finish! Ready.')
-    play(AudioSegment.from_file('system.mp3'))
+
+    # play(AudioSegment.from_file('system.mp3'))
 
     paint_number = 0
     paint_already_know = False
@@ -347,21 +349,21 @@ if __name__ == '__main__':
                     paint_number = 1
                     paint_already_know = True
                     last = 1
-                    # play(AudioSegment.from_file('system.mp3'))
+                    play(AudioSegment.from_file('./sounds/1_confirm.wav'))
                 elif(tmp[0] == '2' and last != 2):
                     paint_number = 2    
                     paint_already_know = True
                     last = 2
-                    # play(AudioSegment.from_file('system.mp3'))
+                    play(AudioSegment.from_file('./sounds/2_confirm.wav'))
                 elif(tmp[0] == '3' and last != 3):
                     paint_number = 3    
                     paint_already_know = True
-                    # play(AudioSegment.from_file('system.mp3'))
+                    play(AudioSegment.from_file('./sounds/3_confirm.wav'))
                 elif(tmp[0] == '4' and last != 4):
                     paint_number = 4    
                     paint_already_know = True
                     last = 4
-                    # play(AudioSegment.from_file('system.mp3'))
+                    play(AudioSegment.from_file('./sounds/4_confirm.wav'))
 
             except: 
                 tmp = 0
@@ -398,6 +400,7 @@ if __name__ == '__main__':
         time.sleep(2)
         motor_thread.start()
         servo_thread.start()
+        
         ### 讀取/播放音檔間隔
         interval = 1.0
 
