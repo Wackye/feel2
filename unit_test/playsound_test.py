@@ -8,6 +8,7 @@ for file in os.listdir(path):
         if file.endswith(".wav"):
             # print('add ' + os.path.join(path,file))
             t = time.time()
+            print(os.path.join(path,file))
             playsound(os.path.join(path,file))
             print(time.time() - t)
             # with open(os.path.join(path,file),'rb') as f:

@@ -392,13 +392,12 @@ if __name__ == '__main__':
             
         ### 執行緒開始
         led_thread.start()
-        servo_thread.start()
-        motor_thread.start()
         bg_thread.start() 
 
         ### 先轉四秒再開始播放音檔
         time.sleep(2)
-
+        motor_thread.start()
+        servo_thread.start()
         ### 讀取/播放音檔間隔
         interval = 1.0
 

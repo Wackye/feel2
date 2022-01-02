@@ -1,7 +1,7 @@
 ### 把聲音依序讀進來播放
 
-from pydub import AudioSegment
-from pydub.playback import play
+# from pydub import AudioSegment
+# from pydub.playback import play
 
 import csv
 import random
@@ -20,7 +20,7 @@ if __name__ == '__main__':  #必須放這段代碼，不然會Error
     bg = {}
     bg_file = './sounds/4.wav'    
     path = './sounds/sfx/'
-
+    
     ### Database
     encoding = {}
     test_case = []
