@@ -68,9 +68,13 @@ def read_sound(path, file):
             return AudioSegment.from_file(f)
 
 def Read_Background(path,bg_list):
-    for file in os.listdir(path):
-        if file.endswith(".wav"):
-            bg_list.append(read_sound(path,file))
+    # for file in os.listdir(path):
+    #     if file.endswith(".wav"):
+            # bg_list.append(read_sound(path,file))
+    bg_list.append(read_sound(path,'1.wav'))
+    bg_list.append(read_sound(path,'2.wav'))
+    bg_list.append(read_sound(path,'3.wav'))
+    bg_list.append(read_sound(path,'4.wav'))
 
 ### 讀取csv並存入database
 def Read_Database(database, csv_file, path):
@@ -349,21 +353,21 @@ if __name__ == '__main__':
                     paint_number = 1
                     paint_already_know = True
                     last = 1
-                    play(AudioSegment.from_file('./sounds/1_confirm.wav'))
+                    play(AudioSegment.from_file('./sounds/confirm/1_confirm.wav'))
                 elif(tmp[0] == '2' and last != 2):
                     paint_number = 2    
                     paint_already_know = True
                     last = 2
-                    play(AudioSegment.from_file('./sounds/2_confirm.wav'))
+                    play(AudioSegment.from_file('./sounds/confirm/2_confirm.wav'))
                 elif(tmp[0] == '3' and last != 3):
                     paint_number = 3    
                     paint_already_know = True
-                    play(AudioSegment.from_file('./sounds/3_confirm.wav'))
+                    play(AudioSegment.from_file('./sounds/confirm/3_confirm.wav'))
                 elif(tmp[0] == '4' and last != 4):
                     paint_number = 4    
                     paint_already_know = True
                     last = 4
-                    play(AudioSegment.from_file('./sounds/4_confirm.wav'))
+                    play(AudioSegment.from_file('./sounds/confirm/4_confirm.wav'))
 
             except: 
                 tmp = 0
@@ -379,7 +383,7 @@ if __name__ == '__main__':
         motor_thread = threading.Thread(target=Run_Motor, args=(sleeps,))
         led_thread = threading.Thread(target=Run_Led,args=(Led,))
         
-        bg_thread = threading.Thread(target=playbg, args=(bg_list[paint_number],))
+        bg_thread = threading.Thread(target=playbg, args=(bg_list[paint_number-1],))
 
         servo_thread.daemon = True
         time.sleep(1)
