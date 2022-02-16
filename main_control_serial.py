@@ -1,6 +1,7 @@
-### autorun on startup using Terminal> sudo nano /etc/rc.local > added path, remove to cancel
+### edit autostart : in home/pi folder, sudo nano autostart.sh
 
-### 2022/2/12, input using serial
+
+### input using serial version
 import termios
 import RPi.GPIO as GPIO
 import queue
@@ -16,6 +17,7 @@ import threading
 import os
 import time
 import csv
+import random
 
 def Initialize():
 
@@ -79,7 +81,7 @@ def Read_Background(path,bg_list):
     bg_list.append(read_sound(path,'4.wav'))
 
 ### 讀取csv並存入database
-def Read_Database(database, csv_file, path):
+def Read_Database(database, csv_file, path, code_list):
     
     
     start = time.time()
@@ -95,21 +97,29 @@ def Read_Database(database, csv_file, path):
                 qrcode = str(row[3])[0:-1] + str(i+1)
                 dict = { qrcode : sound } # qrcode: sound_file pair
                 database.update(dict)
+                code_list.append(qrcode)
         print('finish read database')
     print('read time: ' + str(time.time() - start))
 
 
-### 在開始旋轉後常亮106秒
-def Run_Led(led):
+
+### 在開始旋轉後常亮112秒 (平均每個曲子的時間落在1:52-1:56) 
+def Run_Led(led, duration):
     
+    # 1-> duration -> 5
     print("run_led")
     GPIO.setup(led,GPIO.OUT)
     led1 = GPIO.PWM(led,200)
-    led1.start(0)
+    led1.start(100)
+    led1.ChangeDutyCycle(0)
+    time.sleep(1)
     led1.ChangeDutyCycle(100)
-    time.sleep(106)
+    time.sleep(duration)
+    led1.ChangeDutyCycle(0)
+    time.sleep(5)
     print("LED thread finish")
-
+    led1.ChangeDutyCycle(100)
+    time.sleep(1)
 
 
 ### 改變角度後休息一秒return, call by run_servo
@@ -287,6 +297,7 @@ if __name__ == '__main__':
     sound_path = './sounds/sfx/' ### 音檔資料夾
 
     bg_list = []
+    code_list = []
     database = dict()
 
 
@@ -330,7 +341,7 @@ if __name__ == '__main__':
     Read_Background(bg_path, bg_list)
   
     print('loading database...')
-    Read_Database(database, csv_file, sound_path)
+    Read_Database(database, csv_file, sound_path, code_list)
     
     print('Loading Finish! Ready.')
 
@@ -351,12 +362,16 @@ if __name__ == '__main__':
     t = threading.Thread(target=read_input, args=(received, ser))
     t.start()
 
+    ### Led On
+    GPIO.output(27,GPIO.HIGH)
+
     while(True):
         # tcflush(sys.stdin, termios.TCIFLUSH)
         Toggle_state = GPIO.input(17)
+        GPIO.output(Led ,GPIO.HIGH)
         ###---------------------- user not decide which paint to use ---------
         last = 0
-        print('Toggle_state: ' + str(Toggle_state))    
+        print('put the paint and recognize the number.')
         while(playReady == False or paint_already_know == False):
             if(playReady == False):
                 Toggle_state = GPIO.input(17)
@@ -366,10 +381,8 @@ if __name__ == '__main__':
             # if(paint_already_know == False):
             GPIO.output(18,GPIO.HIGH)
             ### Relay On
-            GPIO.output(27,GPIO.HIGH)
-            ### Led On
-            print('Toggle_state: ' + str(Toggle_state))
-            print('put the paint and recognize the number.')
+ 
+
             
             if len(received) != 0:
                 s = str(int(received[0]))
@@ -396,6 +409,26 @@ if __name__ == '__main__':
                         last = 4
                         play(AudioSegment.from_file('./sounds/confirm/4_confirm.wav'))
 
+                    # debug mode
+                    elif(tmp[0] == '5' and last != 5):
+                        paint_number = 5    
+                        paint_already_know = True
+                        last = 5
+                        play(AudioSegment.from_file('./sounds/confirm/1_confirm.wav'))
+                    elif(tmp[0] == '6' and last != 2):
+                        paint_number = 6    
+                        paint_already_know = True
+                        last = 6
+                        play(AudioSegment.from_file('./sounds/confirm/2_confirm.wav'))
+                    elif(tmp[0] == '7' and last != 3):
+                        paint_number = 7    
+                        paint_already_know = True
+                        play(AudioSegment.from_file('./sounds/confirm/3_confirm.wav'))
+                    elif(tmp[0] == '8' and last != 4):
+                        paint_number = 8    
+                        paint_already_know = True
+                        last = 8
+                        play(AudioSegment.from_file('./sounds/confirm/4_confirm.wav'))
                 except: 
                     tmp = 0
 
@@ -405,67 +438,100 @@ if __name__ == '__main__':
         ### 將伺服馬達, 直流馬達, 燈光, 背景音樂, 皆加入多執行緒
         print('threading...')
         sleeps = [34, 27, 21, 15, 9]
-        
-        ### new parameter : start-to-turn & turn-off-the-led
+        led_duration = [108, 114, 106, 115]
+
         servo_thread = threading.Thread(target=Run_Servo, args=(Servo,sleeps))      
         motor_thread = threading.Thread(target=Run_Motor, args=(sleeps,))
-        led_thread = threading.Thread(target=Run_Led,args=(Led,))
-        
-        bg_thread = threading.Thread(target=playbg, args=(bg_list[paint_number-1],))
+        led_thread = threading.Thread(target=Run_Led,args=(Led,led_duration[(paint_number-1)%4]))
+        bg_thread = threading.Thread(target=playbg, args=(bg_list[(paint_number-1)%4],))
 
         servo_thread.daemon = True
-        time.sleep(1)
         motor_thread.daemon = True
         led_thread.daemon = True
         bg_thread.daemon = True    
 
         ### 播放單個音檔
-
-
         
         ### 執行緒開始
         led_thread.start()
+        time.sleep(1)
         bg_thread.start() 
 
-        ### 先轉四秒再開始播放音檔
+        ### 先轉4拍再開始播放音檔
         time.sleep(2)
         motor_thread.start()
         servo_thread.start()
         
-        ### 讀取/播放音檔間隔
-        interval = 1.0
+        ### normal mode
+        if(paint_number == 1 or paint_number == 2 or paint_number == 3 or paint_number == 4):
+            ### 讀取/播放音檔間隔
+            interval = 1.0
 
-        ### 計時器用
-        last = 0
-        end = 0
-        start = time.time()     
-        val = 0
-        ### 持續讀入QR Code, 存入對應音檔
-        while(time.time() - start <= 106):
-            if len(received) != 0:
-                s = str(int(received[0]))
-                received.pop()
-                val = s
-                if(val != last):
-                    try:
-                        q.put(database[val])
-                        last = val
-                        end = ((time.time() - start) * 1000 % (interval * 1000)) / 1000
-                        duration = interval - end
-                        time.sleep(duration)
-                    except:
-                        val = 0
-                    # if(tmp == 'stop'):
-                    #     stop = True
+            ### 計時器用
+            last = 0
+            end = 0
+            start = time.time()     
+            val = 0
+            
+            ### 持續讀入QR Code, 存入對應音檔
+            while(time.time() - start <= 106):
+                if len(received) != 0:
+                    s = str(int(received[0]))
+                    received.pop()
+                    val = s
+                    if(val != last):
+                        try:
+                            q.put(database[val])
+                            last = val
+                            end = ((time.time() - start) * 1000 % (interval * 1000)) / 1000
+                            duration = interval - end
+                            time.sleep(duration)
+                        except:
+                            val = 0
+                        # if(tmp == 'stop'):
+                        #     stop = True
+            
+            ##################################### Cleanup #################################################################
+            print("finish")
+            stop = True
+            servo_thread.join()
+            motor_thread.join()
+            # [t.join() for t in t_list]
         
-        ##################################### Cleanup #################################################################
-        print("finish")
-        stop = True
-        servo_thread.join()
-        motor_thread.join()
-        # [t.join() for t in t_list]
+        elif(paint_number == 5 or paint_number == 6 or paint_number == 7 or paint_number == 8):
+#            unfinish
+            generate = []
+            if(paint_number == 5):
+                generate = code_list[0:106]
+            elif(paint_number == 6):
+                generate = code_list[106:211]
+            elif(paint_number == 7):
+                generate = code_list[211:366]
+            elif(paint_number == 8):
+                generate = code_list[366:-1]
+
+            random.shuffle(generate)
+
+            ### 計時器用
+            interval = 1.0
+            end = 0
+            start = time.time()
+
+            id = 0       
+            ### 持續讀入QR Code, 存入對應音檔
+            while(time.time() - start <= 106):                
+                try:
+                    q.put(database[generate[id]])
+                    id += 1 
+                    end = ((time.time() - start) * 1000 % (interval * 1000)) / 1000
+                    duration = interval - end
+                    time.sleep(duration)
+                except:
+                    print('generate[id] overflow')
+
         paint_already_know = False
         playReady = False
+        GPIO.output(Led ,GPIO.HIGH)
         print('again')
         
 
