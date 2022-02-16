@@ -116,7 +116,7 @@ def Run_Led(led, duration):
     led1.ChangeDutyCycle(100)
     time.sleep(duration)
     led1.ChangeDutyCycle(0)
-    time.sleep(5)
+    time.sleep(10)
     print("LED thread finish")
     led1.ChangeDutyCycle(100)
     time.sleep(1)
@@ -368,6 +368,8 @@ if __name__ == '__main__':
     while(True):
         # tcflush(sys.stdin, termios.TCIFLUSH)
         Toggle_state = GPIO.input(17)
+
+        time.sleep(10)
         GPIO.output(Led ,GPIO.HIGH)
         ###---------------------- user not decide which paint to use ---------
         last = 0
@@ -431,7 +433,6 @@ if __name__ == '__main__':
                         play(AudioSegment.from_file('./sounds/confirm/4_confirm.wav'))
                 except: 
                     tmp = 0
-
 
         ###---------------------- user open the toggle switch, already verified which paint -----
     
