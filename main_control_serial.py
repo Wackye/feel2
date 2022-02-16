@@ -1,9 +1,11 @@
 ### autorun on startup using Terminal> sudo nano /etc/rc.local > added path, remove to cancel
 
+### 2022/2/12, input using serial
 import termios
 import RPi.GPIO as GPIO
 import queue
 import sys
+import serial
 
 from pydub import AudioSegment
 from pydub.playback import play
@@ -261,7 +263,7 @@ def read_input(data, ser):
         recieved_data += ser.read(data_left)
         data.append(recieved_data)
 #        print(recieved_data)
-
+        
 if __name__ == '__main__':
 
     ### 宣告變數
@@ -275,6 +277,7 @@ if __name__ == '__main__':
     Relay = 22
     Led = 27
     Toggle = 17 
+    Toggle_state = 0
 
     ### Servo
     Servo = 18
@@ -294,10 +297,11 @@ if __name__ == '__main__':
     t_list = []
     stop = False
     q = queue.Queue()
+    playReady = False
 
     ### serial input
-    received = ''
-    
+    received = []
+    ser = serial.Serial("/dev/ttyS0", 9600)
 
     ###----------上面是宣告，下面才正式開始執行----------
 
@@ -312,6 +316,8 @@ if __name__ == '__main__':
     # --- 
     print('initialize...')
     Initialize()
+
+
 
     ### 用多執行緒方式載入loading
     print('hardware test...(skip)')
@@ -341,49 +347,57 @@ if __name__ == '__main__':
         t_list.append(t)
         t_list[i].start()
 
+    ### serial read input
+    t = threading.Thread(target=read_input, args=(received, ser))
+    t.start()
 
     while(True):
-        tcflush(sys.stdin, termios.TCIFLUSH)
-        print('here')
+        # tcflush(sys.stdin, termios.TCIFLUSH)
+        Toggle_state = GPIO.input(17)
         ###---------------------- user not decide which paint to use ---------
-        last = 0    
-        while(Toggle_state == True or paint_already_know == False):
-            Toggle_state = GPIO.input(17)
+        last = 0
+        print('Toggle_state: ' + str(Toggle_state))    
+        while(playReady == False or paint_already_know == False):
+            if(playReady == False):
+                Toggle_state = GPIO.input(17)
+                if(Toggle_state == 0 and paint_already_know == True):
+                    playReady = True
+
             # if(paint_already_know == False):
             GPIO.output(18,GPIO.HIGH)
             ### Relay On
             GPIO.output(27,GPIO.HIGH)
             ### Led On
-
-
+            print('Toggle_state: ' + str(Toggle_state))
             print('put the paint and recognize the number.')
             
+            if len(received) != 0:
+                s = str(int(received[0]))
+                received.pop()
+                tmp = s
+                try:
+                    if(tmp[0] == '1' and last != 1):
+                        paint_number = 1
+                        paint_already_know = True
+                        last = 1
+                        play(AudioSegment.from_file('./sounds/confirm/1_confirm.wav'))
+                    elif(tmp[0] == '2' and last != 2):
+                        paint_number = 2    
+                        paint_already_know = True
+                        last = 2
+                        play(AudioSegment.from_file('./sounds/confirm/2_confirm.wav'))
+                    elif(tmp[0] == '3' and last != 3):
+                        paint_number = 3    
+                        paint_already_know = True
+                        play(AudioSegment.from_file('./sounds/confirm/3_confirm.wav'))
+                    elif(tmp[0] == '4' and last != 4):
+                        paint_number = 4    
+                        paint_already_know = True
+                        last = 4
+                        play(AudioSegment.from_file('./sounds/confirm/4_confirm.wav'))
 
-            tmp = input()
-            Toggle_state = GPIO.input(17)
-            try:
-                if(tmp[0] == '1' and last != 1):
-                    paint_number = 1
-                    paint_already_know = True
-                    last = 1
-                    play(AudioSegment.from_file('./sounds/confirm/1_confirm.wav'))
-                elif(tmp[0] == '2' and last != 2):
-                    paint_number = 2    
-                    paint_already_know = True
-                    last = 2
-                    play(AudioSegment.from_file('./sounds/confirm/2_confirm.wav'))
-                elif(tmp[0] == '3' and last != 3):
-                    paint_number = 3    
-                    paint_already_know = True
-                    play(AudioSegment.from_file('./sounds/confirm/3_confirm.wav'))
-                elif(tmp[0] == '4' and last != 4):
-                    paint_number = 4    
-                    paint_already_know = True
-                    last = 4
-                    play(AudioSegment.from_file('./sounds/confirm/4_confirm.wav'))
-
-            except: 
-                tmp = 0
+                except: 
+                    tmp = 0
 
 
         ###---------------------- user open the toggle switch, already verified which paint -----
@@ -391,7 +405,8 @@ if __name__ == '__main__':
         ### 將伺服馬達, 直流馬達, 燈光, 背景音樂, 皆加入多執行緒
         print('threading...')
         sleeps = [34, 27, 21, 15, 9]
-
+        
+        ### new parameter : start-to-turn & turn-off-the-led
         servo_thread = threading.Thread(target=Run_Servo, args=(Servo,sleeps))      
         motor_thread = threading.Thread(target=Run_Motor, args=(sleeps,))
         led_thread = threading.Thread(target=Run_Led,args=(Led,))
@@ -408,7 +423,6 @@ if __name__ == '__main__':
 
 
         
-            
         ### 執行緒開始
         led_thread.start()
         bg_thread.start() 
@@ -428,20 +442,22 @@ if __name__ == '__main__':
         val = 0
         ### 持續讀入QR Code, 存入對應音檔
         while(time.time() - start <= 106):
-            val = input()
-            if( val != last):
-                try:
-                    q.put(database[val])
-                    last = val
-                    end = ((time.time() - start) * 1000 % (interval * 1000)) / 1000
-                    duration = interval - end
-                    time.sleep(duration)
-                except:
-                    val = 0
-                # if(tmp == 'stop'):
-                #     stop = True
+            if len(received) != 0:
+                s = str(int(received[0]))
+                received.pop()
+                val = s
+                if(val != last):
+                    try:
+                        q.put(database[val])
+                        last = val
+                        end = ((time.time() - start) * 1000 % (interval * 1000)) / 1000
+                        duration = interval - end
+                        time.sleep(duration)
+                    except:
+                        val = 0
+                    # if(tmp == 'stop'):
+                    #     stop = True
         
-
         ##################################### Cleanup #################################################################
         print("finish")
         stop = True
@@ -449,7 +465,9 @@ if __name__ == '__main__':
         motor_thread.join()
         # [t.join() for t in t_list]
         paint_already_know = False
+        playReady = False
         print('again')
+        
 
 
 

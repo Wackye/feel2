@@ -8,8 +8,8 @@
 import RPi.GPIO as GPIO
 import time
 
-led = 4
-switch = 18
+led = 27
+switch = 17
 
 # Set GPIO numbering mode
 GPIO.setwarnings(False)
@@ -24,6 +24,9 @@ GPIO.setup(switch,GPIO.IN)
 #led.start(0)
 
 val = 0
+mean = 0.0
+state = False
+
 
 
 try:
@@ -32,10 +35,20 @@ try:
 #         time.sleep(0.2)
 #         time.sleep(0.2)
         tmp = GPIO.input(switch)
-        # if(val != tmp):
         if(tmp == 1):
-            GPIO.output(led, GPIO.HIGH)
+            state = True
+            mean = 1
         elif(tmp == 0):
+            mean -= 0.01;
+            if(mean > 0):
+                state = True             
+            else:
+                state = False
+                mean = 0
+        # if(val != tmp):
+        if(state):
+            GPIO.output(led, GPIO.HIGH)
+        elif(state == False):
             GPIO.output(led, GPIO.LOW)
         val = tmp   
         print('status:  ', tmp)
