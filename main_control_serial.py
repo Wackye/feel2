@@ -404,6 +404,7 @@ if __name__ == '__main__':
                     elif(tmp[0] == '3' and last != 3):
                         paint_number = 3    
                         paint_already_know = True
+                        last = 7
                         play(AudioSegment.from_file('./sounds/confirm/3_confirm.wav'))
                     elif(tmp[0] == '4' and last != 4):
                         paint_number = 4    
@@ -425,6 +426,7 @@ if __name__ == '__main__':
                     elif(tmp[0] == '7' and last != 3):
                         paint_number = 7    
                         paint_already_know = True
+                        last = 7
                         play(AudioSegment.from_file('./sounds/confirm/3_confirm.wav'))
                     elif(tmp[0] == '8' and last != 4):
                         paint_number = 8    
