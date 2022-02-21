@@ -14,8 +14,17 @@
 
 ## 模組
 ---
-QR Code Scanner : GM77, 若要變更掃描設定(間隔、音效...)請參見manuel
+| 名稱 | 控制方式 | 備註 |
+| --- | --- | --- |
+| QR Code Scanner GM77| Serial Input | 若要變更掃描設定(間隔、音效...)請參見manuel |
+| LED | GPIO(27) | |
+| Switch | GPIO(17) | 控制播放的按鈕
+| 電位器 | GPIO(2,3,4) | 控制步徑馬達 |
+| 繼電器 | GPIO(22) | 控制步徑馬達 |
+| Servo | GPIO(18) | 控制角度 |
 
+
+*GPIO皆為BCM pin*
 
 ## 開發環境要求
 ---
