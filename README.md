@@ -45,3 +45,4 @@
 [音檔和色票對應file](https://docs.google.com/spreadsheets/d/1vDnh0Sb9ZLYLoW9fTqGnQfbzMFge6I3uIEwoA7uLpns/edit#gid=0)
 
 [音色列表](https://docs.google.com/document/d/1vvbD43TpmT22kZZp7BF6BkinNLo6mANS4iosYzWDRcw/edit?usp=sharing)
+(裡面寫的顏色參考用，後來根據畫作都有修正）
