@@ -18,6 +18,7 @@ import os
 import time
 import csv
 import random
+import re 
 
 def Initialize():
 
@@ -96,6 +97,7 @@ def Read_Background(path,bg_list):
     bg_list.append(read_sound(path,'2.wav'))
     bg_list.append(read_sound(path,'3.wav'))
     bg_list.append(read_sound(path,'4.wav'))
+    print('Finish load background music.')
 
 ### 讀取csv並存入database
 def Read_Database(database, csv_file, path, code_list):
@@ -110,11 +112,10 @@ def Read_Database(database, csv_file, path, code_list):
         for row in rows:
             # print(row)
             sound = read_sound(path,row[2].upper() + '.wav')
-            for i in range(0, int(row[1])):
-                qrcode = str(row[3])[0:-1] + str(i+1)
-                dict = { qrcode : sound } # qrcode: sound_file pair
-                database.update(dict)
-                code_list.append(qrcode)
+            qrcode = str(row[3])[0:4]
+            dict = { qrcode : sound } # qrcode: sound_file pair
+            database.update(dict)
+#           code_list.append(qrcode)
         print('finish read database')
     print('read time: ' + str(time.time() - start))
 
@@ -132,7 +133,7 @@ def Run_Led(led, duration):
     led1.ChangeDutyCycle(100)
     time.sleep(duration)
     led1.ChangeDutyCycle(0)
-    time.sleep(10)
+    time.sleep(8)
     print("LED thread finish")
     led1.ChangeDutyCycle(100)
     time.sleep(1)
@@ -154,8 +155,8 @@ def Run_Servo(s1,sleep_list):
     print('servo rotate 0')
     time.sleep(sleep_list[0] - 1)
 
-    changeAngle(s1,75)
-    print('servo rotate 75')
+    changeAngle(s1,70)
+    print('servo rotate 70')
     time.sleep(sleep_list[1] - 1)
     
     changeAngle(s1,105)
@@ -276,9 +277,9 @@ def shot(q):
         if(q.empty() != True):
             try:
                 play(q.get())
-                time.sleep(0.02)
+                time.sleep(0.01)
             except:
-                time.sleep(0.001)
+                time.sleep(0.01)
     print('Shot thread finish')
 
 def read_input(data, ser):
@@ -287,8 +288,11 @@ def read_input(data, ser):
         sleep(0.03)
         data_left = ser.inWaiting()
         recieved_data += ser.read(data_left)
-        data.append(recieved_data)
-#        print(recieved_data)
+        regex_eli = r'[^0-9]+'
+
+        r = re.sub(regex_eli, '', str(recieved_data))
+        data.append(r)
+        print(r)
         
 if __name__ == '__main__':
 
@@ -384,11 +388,10 @@ if __name__ == '__main__':
     while(True):
         # tcflush(sys.stdin, termios.TCIFLUSH)
         Toggle_state = GPIO.input(17)
-
-        time.sleep(10)
         GPIO.output(Led ,GPIO.HIGH)
         ###---------------------- user not decide which paint to use ---------
         last = 0
+        received.clear()
         print('put the paint and recognize the number.')
         while(playReady == False or paint_already_know == False):
             if(playReady == False):
@@ -400,10 +403,9 @@ if __name__ == '__main__':
             GPIO.output(18,GPIO.HIGH)
             ### Relay On
  
-
             
             if len(received) != 0:
-                s = str(int(received)[0])
+                s = str(received[0])
                 received.pop()
                 tmp = s
                 try:
@@ -420,7 +422,7 @@ if __name__ == '__main__':
                     elif(tmp[0] == '3' and last != 3):
                         paint_number = 3    
                         paint_already_know = True
-                        last = 7
+                        last = 3
                         play(AudioSegment.from_file('./sounds/confirm/3_confirm.wav'))
                     elif(tmp[0] == '4' and last != 4):
                         paint_number = 4    
@@ -432,12 +434,13 @@ if __name__ == '__main__':
                     elif(tmp[0] == '8' and last != 8):
                         paint_number = 0    
                         paint_already_know = True
+                        playReady = True
                         last = 8
                         play(AudioSegment.from_file('./sounds/confirm/open_demo.wav'))
-                    elif(tmp[0] == '9' and last != 9):
-                        paint_number = 0 
-                        last = 9
-                        play(AudioSegment.from_file('./sounds/confirm/close_demo.wav'))
+                    # elif(tmp[0] == '9' and last != 9):
+                    #     paint_number = 0 
+                    #     last = 9
+                    #     play(AudioSegment.from_file('./sounds/confirm/close_demo.wav'))
 
                 except:  
                     tmp = 0
@@ -485,12 +488,12 @@ if __name__ == '__main__':
             ### 持續讀入QR Code, 存入對應音檔
             while(time.time() - start <= 106):
                 if len(received) != 0:
-                    s = str(int(received[0]))
+                    s = str(received[0])
                     received.pop()
                     val = s
                     if(val != last):
                         try:
-                            q.put(database[val])
+                            q.put(database[val[0:4]])
                             last = val
                             end = ((time.time() - start) * 1000 % (interval * 1000)) / 1000
                             duration = interval - end
@@ -508,21 +511,32 @@ if __name__ == '__main__':
             # [t.join() for t in t_list]
         
         ### 播放單個音檔
-        elif(paint_number == -1):
+        elif(paint_number == 0):
+            val = '0000'
+            last = 0
             while(val[0] != '9'):                
                 if len(received) != 0:
-                    s = str(int(received[0]))
+                    s = str(received[0])
                     received.pop()
                     val = s
-                    q.put(database[val])
-            
+                    if(val != last and val[0] != '9'):
+                        try:
+                            q.put(database[val[0:4]])
+                            last = val  
+                            time.sleep(0.5)
+                        except:
+                            last = 0
+                            
             play(AudioSegment.from_file('./sounds/confirm/close_demo.wav'))
+
+        if(paint_number != 0):
+            time.sleep(12)
 
         paint_already_know = False
         playReady = False
         GPIO.output(Led ,GPIO.HIGH)
         print('again')
-        
+
 
 
 
