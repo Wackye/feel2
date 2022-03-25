@@ -2,9 +2,9 @@
 
 ## 專案說明
 ---
-- 主程式: main_control.py
+- 主程式: main_control_serial.py
 - unit_test資料夾: 個別模組的單元測試.py檔
-- sounds開頭的資料夾: 音效檔
+- sounds開頭的資料夾: 色票音樂檔(SFX資料夾), 背景音樂, 操作提示音(Confirm資料夾)
 - csv檔: 儲存色票, 播放次數, 對應音效, Code的對應資料表
 - uniility資料夾: 存放檔案命名小工具
 
