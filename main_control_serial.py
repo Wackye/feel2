@@ -354,7 +354,7 @@ if __name__ == '__main__':
 
 
     ### 用多執行緒方式載入loading
-    print('hardware test...(skip)')
+    print('hardware test...')
     loading = threading.Thread(target=load_test, args=(Servo,Led))
     loading.start()
     
@@ -475,7 +475,7 @@ if __name__ == '__main__':
             bg_thread.start() 
 
             ### 先轉4拍再開始播放音檔
-            time.sleep(2)
+            time.sleep(led_duration[(paint_number-1)] - 106)
             motor_thread.start()
             servo_thread.start()
 
@@ -508,10 +508,8 @@ if __name__ == '__main__':
                         #     stop = True
             
             ##################################### Cleanup #################################################################
-            
             print("Read finish")
 
-            # [t.join() for t in t_list]
         
         ### 播放單個音檔
         elif(paint_number == 0):
@@ -533,11 +531,14 @@ if __name__ == '__main__':
             play(AudioSegment.from_file('./sounds/confirm/close_demo.wav'))
 
         if(paint_number != 0):
-            time.sleep(int(led_duration[paint_number]) - 106 + 10)
+            endbreak = (led_duration[(paint_number-1)]) - 96
+            print('main thread sleep in end ' + str(endbreak))
+            time.sleep(endbreak)
             led_thread.join()
             stop = True
             servo_thread.join()
             motor_thread.join()
+            received.clear()
         paint_already_know = False
         playReady = False
         print('again')
