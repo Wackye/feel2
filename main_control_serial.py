@@ -126,17 +126,20 @@ def Run_Led(led, duration):
     # 1-> duration -> 5
     print("run_led")
     GPIO.setup(led,GPIO.OUT)
-    led1 = GPIO.PWM(led,200)
-    led1.start(100)
-    led1.ChangeDutyCycle(0)
+    GPIO.output(led,GPIO.HIGH)
     time.sleep(1)
-    led1.ChangeDutyCycle(100)
     time.sleep(duration)
-    led1.ChangeDutyCycle(0)
+    GPIO.output(led, GPIO.LOW)
     time.sleep(8)
-    print("LED thread finish")
-    led1.ChangeDutyCycle(100)
-    time.sleep(1)
+    # led1 = GPIO.PWM(led,200)
+    # time.sleep(1)
+    # led1.ChangeDutyCycle(100)
+    # time.sleep(duration)
+    # led1.ChangeDutyCycle(0)
+    # time.sleep(8)
+    # print("LED thread finish")
+    # led1.ChangeDutyCycle(100)
+    # time.sleep(1)
 
 
 ### 改變角度後休息一秒return, call by run_servo
@@ -400,10 +403,10 @@ if __name__ == '__main__':
                     playReady = True
 
             # if(paint_already_know == False):
-            GPIO.output(18,GPIO.HIGH)
+            GPIO.output(Led,GPIO.HIGH)
             ### Relay On
  
-            
+                    
             if len(received) != 0:
                 s = str(received[0])
                 received.pop()
@@ -484,7 +487,8 @@ if __name__ == '__main__':
             end = 0
             start = time.time()     
             val = 0
-            
+
+            received.clear()
             ### 持續讀入QR Code, 存入對應音檔
             while(time.time() - start <= 106):
                 if len(received) != 0:
@@ -504,10 +508,9 @@ if __name__ == '__main__':
                         #     stop = True
             
             ##################################### Cleanup #################################################################
-            print("finish")
-            stop = True
-            servo_thread.join()
-            motor_thread.join()
+            
+            print("Read finish")
+
             # [t.join() for t in t_list]
         
         ### 播放單個音檔
@@ -530,11 +533,13 @@ if __name__ == '__main__':
             play(AudioSegment.from_file('./sounds/confirm/close_demo.wav'))
 
         if(paint_number != 0):
-            time.sleep(12)
-
+            time.sleep(int(led_duration[paint_number]) - 106 + 10)
+            led_thread.join()
+            stop = True
+            servo_thread.join()
+            motor_thread.join()
         paint_already_know = False
         playReady = False
-        GPIO.output(Led ,GPIO.HIGH)
         print('again')
 
 
