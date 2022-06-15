@@ -519,14 +519,15 @@ if __name__ == '__main__':
                 if len(received) != 0:
                     s = str(received[0])
                     received.pop()
-                    val = s
-                    if(val != last and val[0] != '9'):
-                        try:
-                            q.put(database[val[0:4]])
-                            last = val  
-                            time.sleep(0.5)
-                        except:
-                            last = 0
+                    if(len(s) > 0):
+                        val = s
+                        if(val != last and len(val) > 0 and val[0] != '9'):
+                            try:
+                                q.put(database[val[0:4]])
+                                last = val  
+                                time.sleep(0.5)
+                            except:
+                                last = 0
                             
             play(AudioSegment.from_file('./sounds/confirm/close_demo.wav'))
 
